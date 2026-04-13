@@ -1,0 +1,7 @@
+package com.retomada.sistema_de_atendimento.model.enums;
+
+public enum StatusSenha {
+    AGUARDANDO,
+    CHAMADA,
+    CANCELADA
+}
