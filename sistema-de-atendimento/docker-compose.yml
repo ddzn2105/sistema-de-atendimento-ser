@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  # Container do Banco de Dados PostgreSQL
+  db:
+    image: postgres:15-alpine
+    container_name: postgres-atendimento
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: $up@2026
+      POSTGRES_DB: atendimento_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  # Container do Backend (Sua API Spring Boot)
+  app:
+    build: .
+    container_name: api-atendimento
+    ports:
+      - "8089:8089"
+    depends_on:
+      - db
+    environment:
+      # O Spring Boot vai usar este link para achar o banco de dados dentro da rede do Docker
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/atendimento_db
+      - SPRING_DATASOURCE_USERNAME=admin
+      - SPRING_DATASOURCE_PASSWORD=$up@2026
+    restart: unless-stopped
+
+  # Container do Frontend (Servidor Web Nginx)
+  frontend:
+    image: nginx:alpine
+    container_name: frontend-atendimento
+    ports:
+      - "80:80"
+    volumes:
+      # Mapeia a pasta "frontend" do PC para dentro do servidor Nginx
+      - ./frontend:/usr/share/nginx/html
+    restart: unless-stopped
+
+volumes:
+  # Volume nomeado para garantir que os dados do banco não sejam perdidos se o container reiniciar
+  postgres_data:

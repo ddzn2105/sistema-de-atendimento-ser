@@ -20,9 +20,6 @@ public class Senha {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private int senha;
-
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private TipoSenha tipo;

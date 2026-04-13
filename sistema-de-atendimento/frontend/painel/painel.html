@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Atendimento</title>
+    <link rel="stylesheet" href="painel.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@700&family=Roboto:wght@400&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div class="container">
+        <div class="chamada-principal" id="chamada-principal">
+            <span class="label">SENHA</span>
+            <span class="numero-senha" id="senha-atual">----</span>
+            <span class="label">GUICHÊ</span>
+            <span class="numero-guiche" id="guiche-atual">--</span>
+        </div>
+
+        <div class="historico-chamadas">
+            <h2>ÚLTIMAS CHAMADAS</h2>
+            <ul id="historico-lista">
+                </ul>
+        </div>
+    </div>
+
+    <footer>
+        <div id="relogio"></div>
+        <button id="ativar-audio">🔊 Ativar Som</button> 
+        <div class="logo">
+        <img src="../img/goias-logo.png" alt="Logo Goiás" class="logo-goias">    
+        <img src="../img/retomada-logo.png" alt="Logo Retomada" class="logo-retomada">
+        <img src="../img/geti-logo.png" alt="Logo GETI" class="logo-geti">
+        </div>
+    </footer>
+
+    <audio id="notification-sound" src="../sound.mp3" preload="auto"></audio>
+
+    <script src="painel.js"></script>
+</body>
+</html>

@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sistema de Atendimento</title>
+    <link rel="stylesheet" href="atendente.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Sistema de Atendimento</h1>
+      <button id="btn-sair" style="background-color: #dc3545">Sair</button>
+    </header>
+
+    <main>
+      <section class="painel">
+        <h2>Painel de Chamadas</h2>
+        <div id="ultima-senha-chamada" class="display-senha-grande">
+          <p>Senha</p>
+          <span id="painel-senha">--</span>
+          <p>Guichê</p>
+          <span id="painel-guiche">--</span>
+        </div>
+
+        <div class="historico-painel">
+          <h3>Últimas Chamadas</h3>
+          <ol id="historico-chamadas"></ol>
+        </div>
+      </section>
+
+      <div class="container-acoes">
+        <section class="area-cliente">
+          <h2>Área do Cliente</h2>
+          <p>Pegue sua senha:</p>
+          <div class="botoes">
+            <button id="btn-normal">Senha Normal</button>
+            <button id="btn-preferencial">Senha Preferencial</button>
+          </div>
+          <div id="senha-gerada" class="display-info"></div>
+        </section>
+
+        <section class="area-atendente">
+          <h2>Área do Atendente</h2>
+          <div class="input-guiche">
+            <label for="guiche-input">Seu Guichê:</label>
+            <input type="text" id="guiche-input" placeholder="Ex: 01" />
+          </div>
+          <button id="btn-chamar">Chamar Próxima Senha</button>
+          <div id="senha-chamada" class="display-info"></div>
+        </section>
+        <section class="area-atendente">
+          <h2>Rechamar Senha</h2>
+          <div class="input-guiche">
+            <label for="rechamar-numero-input">Senha (Ex: P12 ou N5):</label>
+            <input
+              type="text"
+              id="rechamar-numero-input"
+              placeholder="Ex: P12"
+            />
+          </div>
+          <button id="btn-rechamar">Rechamar Senha</button>
+          <div id="rechamar-info" class="display-info"></div>
+        </section>
+      </div>
+    </main>
+
+    <script src="atendente.js"></script>
+  </body>
+</html>

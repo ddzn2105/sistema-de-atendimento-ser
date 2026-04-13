@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -28,7 +29,12 @@ public class SenhaService implements SenhaServiceInterface {
     @Override
     @Transactional
     public SenhaGeradaDTO gerarNovaSenha(TipoSenha tipo) {
-        int proximoNumero = senhaRepository.findTopByTipoOrderByIdDesc(tipo)
+        // 1. Descobre o inicio e fim do dia atual
+        LocalDateTime inicioDoDia = LocalDateTime.now().with(LocalTime.MIN); // Ex: 2023-10-25T00:00:00
+        LocalDateTime fimDoDia = LocalDateTime.now().with(LocalTime.MAX);    // Ex: 2023-10-25T23:59:59.999
+
+        // 2. Busca a última senha gerada HOJE e incrementa, ou começa em 1
+        int proximoNumero = senhaRepository.findTopByTipoAndDataHoraBetweenOrderByIdDesc(tipo, inicioDoDia, fimDoDia)
                 .map(ultimaSenha -> ultimaSenha.getNumero() + 1)
                 .orElse(1);
 

@@ -1,0 +1,63 @@
+
+/* Garante que a página ocupe toda a altura e remove margens padrão */
+html, body {
+    height: 100%;
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f0f2f5; /* Cor de fundo para a página inteira */
+}
+
+/* A MÁGICA DA CENTRALIZAÇÃO ACONTECE AQUI */
+body {
+    display: flex;
+    justify-content: center; /* Centraliza o conteúdo no eixo horizontal (esquerda/direita) */
+    align-items: center;     /* Centraliza o conteúdo no eixo vertical (cima/baixo) */
+}
+
+/* Estiliza o container geral da área de login */
+.area-login {
+    max-width: 400px;
+    padding: 30px;
+    background-color: #f4f4f4;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.area-login h2 {
+    margin-bottom: 20px;
+    color: #333;
+}
+
+/* A MÁGICA ACONTECE AQUI */
+#login-form {
+    display: flex;             /* 1. Ativa o Flexbox */
+    flex-direction: column;    /* 2. Coloca os itens em coluna (um embaixo do outro) */
+    gap: 15px;                 /* 3. Adiciona um espaço de 15px entre cada item */
+}
+
+/* Estilo comum para os campos de input e o botão */
+#login-form input,
+#login-form button {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-sizing: border-box; /* Garante que o padding não afete a largura total */
+}
+
+/* Estilo específico para o botão */
+#login-form button {
+    background-color: #2E8B57;
+    color: white;
+    font-weight: bold;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+/* Efeito visual ao passar o mouse sobre o botão */
+#login-form button:hover {
+    background-color: #257240;
+}
