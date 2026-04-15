@@ -68,6 +68,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Variáveis de controle para as repetições
   let repeticaoTimeout = null;
   let chamadaAtualTexto = "";
+  let utteranceAtual = null;
 
   // Função que converte texto em fala (com repetição e interrupção inteligente)
   function falarChamada(texto, contagem = 1) {
@@ -83,32 +84,44 @@ document.addEventListener("DOMContentLoaded", () => {
       window.speechSynthesis.cancel();
       // Grava qual é a senha "oficial" do momento
       chamadaAtualTexto = texto;
+      console.log("=== INICIANDO NOVA CHAMADA ===");
     } else {
-      // Se for a repetição 2 ou 3, mas a senha "oficial" mudou no meio do caminho,
-      // significa que o atendente chamou outra. Então abortamos essa repetição.
+      // Se for a repetição 2 ou 3, mas a senha mudou no meio do caminho, abortamos.
       if (texto !== chamadaAtualTexto) return;
     }
 
-    const utterance = new SpeechSynthesisUtterance(texto);
-    utterance.lang = "pt-BR";
-    utterance.rate = 0.9; // Velocidade da fala (1 é o padrão)
+    // Usa a variável global em vez de 'const' para o Chrome não apagar o evento da memória
+    utteranceAtual = new SpeechSynthesisUtterance(texto);
+    utteranceAtual.lang = "pt-BR";
+    utteranceAtual.rate = 0.9; // Velocidade da fala
 
     if (vozBrasileira) {
-      utterance.voice = vozBrasileira;
+      utteranceAtual.voice = vozBrasileira;
     }
 
-    // O evento 'onend' é disparado automaticamente assim que a voz TERMINA de falar a frase
-    utterance.onend = () => {
-      // Se já não tiver chegado outra senha E a contagem for menor que 3 (limite)
+    // Dispara quando a voz TERMINA de falar a frase
+    utteranceAtual.onend = () => {
+      console.log(`Fala concluída: ${contagem}/3`);
+
+      // Se ainda for a mesma senha e a contagem for menor que 3
       if (texto === chamadaAtualTexto && contagem < 3) {
-        // Agenda a próxima fala para daqui a 5 segundos (5000 milissegundos)
+        console.log("Agendando próxima repetição para daqui a 5 segundos...");
+
         repeticaoTimeout = setTimeout(() => {
           falarChamada(texto, contagem + 1);
         }, 5000);
       }
     };
 
-    window.speechSynthesis.speak(utterance);
+    // Tratamento de erros para evitar que a fila de voz bloqueie
+    utteranceAtual.onerror = (e) => {
+      console.warn(
+        "Aviso na síntese de voz (geralmente cancelamento por interrupção):",
+        e,
+      );
+    };
+
+    window.speechSynthesis.speak(utteranceAtual);
   }
 
   // O navegador dispara este evento quando as vozes estão prontas
