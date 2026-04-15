@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
   // URL base da sua API. Altere a porta se necessário.
-  const API_URL = "http://10.6.53.199/api";
+  const API_URL = "http://10.6.53.199:8089/api";
 
   // Elementos da Área do Cliente
   const btnNormal = document.getElementById("btn-normal");

@@ -1,5 +1,4 @@
-package com.retomada.sistema_de_atendimento.security;
-
+package com.retomada.sistema_de_atendimento.secur
 import jakarta.persistence.Entity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -53,10 +52,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        
-        // A MUDANÇA É AQUI: Permite qualquer IP/Domínio (*) enquanto mantém as credenciais ativas
-        configuration.setAllowedOriginPatterns(List.of("*")); 
-        
+        configuration.setAllowedOrigins(List.of("http://localhost:3000", "null"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true); // 🔑 permite envio de Authorization

@@ -17,6 +17,14 @@ public interface SenhaRepository extends JpaRepository<Senha, Long> {
     Optional<Senha> findTopByTipoAndDataHoraBetweenOrderByIdDesc(TipoSenha tipo, LocalDateTime inicioDia, LocalDateTime fimDia);
     Optional<Senha> findTopByTipoOrderByIdDesc(TipoSenha tipo);
     Optional<Senha> findByNumeroAndTipo(int numero, TipoSenha tipo);
+    // Busca a próxima senha aguardando, mas apenas as de HOJE
+    Optional<Senha> findFirstByStatusSenhaAndTipoAndDataHoraBetweenOrderByDataHoraAsc(StatusSenha status, TipoSenha tipo, LocalDateTime inicio, LocalDateTime fim);
 
-
+    // Busca a senha específica de HOJE para poder Rechamar
+    Optional<Senha> findByNumeroAndTipoAndDataHoraBetween(int numero, TipoSenha tipo, LocalDateTime inicio, LocalDateTime fim);
+    List<Senha> findTop5ByStatusSenhaAndDataHoraChamadaBetweenOrderByDataHoraChamadaDesc(
+        StatusSenha status, 
+        LocalDateTime inicio, 
+        LocalDateTime fim
+    );
 }

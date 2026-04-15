@@ -52,33 +52,27 @@ public class SenhaService implements SenhaServiceInterface {
     @Override
     @Transactional
     public SenhaChamadaDTO chamarProximaSenha(String guiche) {
+        LocalDateTime inicioDoDia = LocalDateTime.now().with(LocalTime.MIN);
+        LocalDateTime fimDoDia = LocalDateTime.now().with(LocalTime.MAX);
         Optional<Senha> proximaSenha;
 
-        // Busca a próxima senha preferencial que está aguardando
-        Optional<Senha> proximaPreferencial = senhaRepository.findFirstByStatusSenhaAndTipoOrderByDataHoraAsc(StatusSenha.AGUARDANDO, TipoSenha.PREFERENCIAL);
-
-        // REGRA DE NEGÓCIO:
-        // 1. Se houver uma senha preferencial e o contador for >= 2, chame a preferencial.
+        Optional<Senha> proximaPreferencial = senhaRepository.findFirstByStatusSenhaAndTipoAndDataHoraBetweenOrderByDataHoraAsc(StatusSenha.AGUARDANDO, TipoSenha.PREFERENCIAL, inicioDoDia, fimDoDia);
 
         if (proximaPreferencial.isPresent() && contadorDeChamadas.get() >= 2) {
             proximaSenha = proximaPreferencial;
-            contadorDeChamadas.set(0); // Reseta o contador
+            contadorDeChamadas.set(0); 
         } else {
-            // 2. Senão, tente chamar uma senha normal.
-            proximaSenha = senhaRepository.findFirstByStatusSenhaAndTipoOrderByDataHoraAsc(StatusSenha.AGUARDANDO, TipoSenha.NORMAL);
-
-            // 3. Se não houver normal, mas houver preferencial, chame a preferencial (para não deixar a fila parada).
+            proximaSenha = senhaRepository.findFirstByStatusSenhaAndTipoAndDataHoraBetweenOrderByDataHoraAsc(StatusSenha.AGUARDANDO, TipoSenha.NORMAL, inicioDoDia, fimDoDia);
+            
             if (proximaSenha.isEmpty() && proximaPreferencial.isPresent()) {
                 proximaSenha = proximaPreferencial;
-                contadorDeChamadas.set(0); // Reseta o contador
+                contadorDeChamadas.set(0); 
             } else if (proximaSenha.isPresent()) {
-                // Se chamou uma normal, incrementa o contador.
                 contadorDeChamadas.incrementAndGet();
             }
         }
 
-        Senha senhaASerChamada = proximaSenha
-                .orElseThrow(() -> new RuntimeException("Nenhuma senha aguardando para ser chamada."));
+        Senha senhaASerChamada = proximaSenha.orElseThrow(() -> new RuntimeException("Nenhuma senha aguardando para ser chamada."));
 
         senhaASerChamada.setDataHoraChamada(LocalDateTime.now());
         senhaASerChamada.setStatusSenha(StatusSenha.CHAMADA);
@@ -86,7 +80,8 @@ public class SenhaService implements SenhaServiceInterface {
 
         senhaRepository.save(senhaASerChamada);
 
-        return new SenhaChamadaDTO(senhaASerChamada.getNumero(), senhaASerChamada.getGuicheAtendimento(), senhaASerChamada.getTipo());
+        // Agora retorna também a dataHoraChamada
+        return new SenhaChamadaDTO(senhaASerChamada.getNumero(), senhaASerChamada.getGuicheAtendimento(), senhaASerChamada.getTipo(), senhaASerChamada.getDataHoraChamada());
     }
 
     @Override
@@ -104,27 +99,41 @@ public class SenhaService implements SenhaServiceInterface {
     }
 
     public List<SenhaChamadaDTO> listarUltimasSenhasChamadas() {
-        List<Senha> ultimasSenhas = senhaRepository.findTop5ByStatusSenhaOrderByDataHoraChamadaDesc(StatusSenha.CHAMADA);
+    // Define o início (00:00:00) e o fim (23:59:59) do dia de hoje
+    LocalDateTime inicioDoDia = LocalDateTime.now().with(LocalTime.MIN);
+    LocalDateTime fimDoDia = LocalDateTime.now().with(LocalTime.MAX);
 
-        return ultimasSenhas.stream()
-                .map(senha -> new SenhaChamadaDTO(senha.getNumero(), senha.getGuicheAtendimento(),  senha.getTipo()))
-                .collect(Collectors.toList());
-    }
+    // Busca apenas as senhas que foram chamadas DENTRO do dia de hoje
+    List<Senha> ultimasSenhas = senhaRepository.findTop5ByStatusSenhaAndDataHoraChamadaBetweenOrderByDataHoraChamadaDesc(
+        StatusSenha.CHAMADA, 
+        inicioDoDia, 
+        fimDoDia
+    );
+
+    return ultimasSenhas.stream()
+            .map(senha -> new SenhaChamadaDTO(
+                senha.getNumero(), 
+                senha.getGuicheAtendimento(), 
+                senha.getTipo(),
+                senha.getDataHoraChamada() // Certifique-se de que o DTO suporta este campo
+            ))
+            .collect(Collectors.toList());
+}
 
     @Override
     @Transactional
     public SenhaChamadaDTO rechamarSenha(int numero, String guiche, TipoSenha tipo) {
-        // Busca a senha pelo número, não importa o status
-        Senha senha = senhaRepository.findByNumeroAndTipo(numero, tipo)
-                .orElseThrow(() -> new SenhaNaoEncontradaException("Senha " + tipo + " #" + numero + " não encontrada."));
+        LocalDateTime inicioDoDia = LocalDateTime.now().with(LocalTime.MIN);
+        LocalDateTime fimDoDia = LocalDateTime.now().with(LocalTime.MAX);
 
-        // Atualiza os dados da senha para a nova chamada
+        Senha senha = senhaRepository.findByNumeroAndTipoAndDataHoraBetween(numero, tipo, inicioDoDia, fimDoDia)
+                .orElseThrow(() -> new SenhaNaoEncontradaException("Senha " + tipo + " #" + numero + " não encontrada hoje."));
+
         senha.setStatusSenha(StatusSenha.CHAMADA);
-        senha.setDataHoraChamada(LocalDateTime.now()); // << PONTO PRINCIPAL: atualiza a hora da chamada
+        senha.setDataHoraChamada(LocalDateTime.now()); // Hora atualizada = TV vai tocar de novo!
         senha.setGuicheAtendimento(guiche);
-
         senhaRepository.save(senha);
 
-        return new SenhaChamadaDTO(senha.getNumero(), senha.getGuicheAtendimento(), senha.getTipo());
+        return new SenhaChamadaDTO(senha.getNumero(), senha.getGuicheAtendimento(), senha.getTipo(), senha.getDataHoraChamada());
     }
 }
