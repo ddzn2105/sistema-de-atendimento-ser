@@ -65,22 +65,48 @@ document.addEventListener("DOMContentLoaded", () => {
     );
   }
 
-  // Função que converte texto em fala
-  function falarChamada(texto) {
+  // Variáveis de controle para as repetições
+  let repeticaoTimeout = null;
+  let chamadaAtualTexto = "";
+
+  // Função que converte texto em fala (com repetição e interrupção inteligente)
+  function falarChamada(texto, contagem = 1) {
     if (!audioAtivado || !("speechSynthesis" in window)) {
       return; // Só fala se o áudio estiver ativado e o navegador suportar
     }
 
-    // Cancela qualquer fala anterior para não sobrepor
-    window.speechSynthesis.cancel();
+    // Se for a primeira chamada dessa senha (nova chamada ou rechamada do botão)
+    if (contagem === 1) {
+      // Limpa o temporizador da senha anterior para não encavalar
+      clearTimeout(repeticaoTimeout);
+      // Faz a TV "calar a boca" imediatamente se estiver a falar a senha velha
+      window.speechSynthesis.cancel();
+      // Grava qual é a senha "oficial" do momento
+      chamadaAtualTexto = texto;
+    } else {
+      // Se for a repetição 2 ou 3, mas a senha "oficial" mudou no meio do caminho,
+      // significa que o atendente chamou outra. Então abortamos essa repetição.
+      if (texto !== chamadaAtualTexto) return;
+    }
 
     const utterance = new SpeechSynthesisUtterance(texto);
     utterance.lang = "pt-BR";
     utterance.rate = 0.9; // Velocidade da fala (1 é o padrão)
 
     if (vozBrasileira) {
-      utterance.voice = vozBrasileira; // Usa a voz brasileira se encontrada
+      utterance.voice = vozBrasileira;
     }
+
+    // O evento 'onend' é disparado automaticamente assim que a voz TERMINA de falar a frase
+    utterance.onend = () => {
+      // Se já não tiver chegado outra senha E a contagem for menor que 3 (limite)
+      if (texto === chamadaAtualTexto && contagem < 3) {
+        // Agenda a próxima fala para daqui a 5 segundos (5000 milissegundos)
+        repeticaoTimeout = setTimeout(() => {
+          falarChamada(texto, contagem + 1);
+        }, 5000);
+      }
+    };
 
     window.speechSynthesis.speak(utterance);
   }
@@ -93,51 +119,55 @@ document.addEventListener("DOMContentLoaded", () => {
   let senhasExibidas = new Set();
   let ultimaHoraChamada = null;
   async function atualizarPainel() {
-        try {
-            const response = await fetch(`${API_URL}/painel/ultimas-chamadas`);
-            if (!response.ok) return;
+    try {
+      const response = await fetch(`${API_URL}/painel/ultimas-chamadas`);
+      if (!response.ok) return;
 
-            const ultimasChamadas = await response.json();
-            if (ultimasChamadas.length === 0) return;
+      const ultimasChamadas = await response.json();
+      if (ultimasChamadas.length === 0) return;
 
-            const senhaMaisRecente = ultimasChamadas[0]; // A senha do topo
-            
-            // Se o horário de chamada da senha do topo for diferente do último registrado, é uma chamada nova (ou rechamada)!
-            if (senhaMaisRecente.dataHoraChamada !== ultimaHoraChamada) {
-                const prefixo = senhaMaisRecente.tipoSenha === 'PREFERENCIAL' ? 'P' : 'N';
-                const numeroFormatado = prefixo + senhaMaisRecente.numero;
-                const guicheFormatado = String(senhaMaisRecente.guicheAtendimento).padStart(2, '0');
+      const senhaMaisRecente = ultimasChamadas[0]; // A senha do topo
 
-                senhaAtualEl.textContent = numeroFormatado;
-                guicheAtualEl.textContent = guicheFormatado;
+      // Se o horário de chamada da senha do topo for diferente do último registrado, é uma chamada nova (ou rechamada)!
+      if (senhaMaisRecente.dataHoraChamada !== ultimaHoraChamada) {
+        const prefixo =
+          senhaMaisRecente.tipoSenha === "PREFERENCIAL" ? "P" : "N";
+        const numeroFormatado = prefixo + senhaMaisRecente.numero;
+        const guicheFormatado = String(
+          senhaMaisRecente.guicheAtendimento,
+        ).padStart(2, "0");
 
-                notificationSound.play().catch(e => console.error("Erro ao tocar som:", e));
+        senhaAtualEl.textContent = numeroFormatado;
+        guicheAtualEl.textContent = guicheFormatado;
 
-                const textoParaFalar = `Senha ${prefixo}, ${senhaMaisRecente.numero}. Dirija-se ao guichê ${parseInt(guicheFormatado, 10)}.`;
-                falarChamada(textoParaFalar);
+        notificationSound
+          .play()
+          .catch((e) => console.error("Erro ao tocar som:", e));
 
-                chamadaPrincipalEl.classList.add('flash');
-                setTimeout(() => chamadaPrincipalEl.classList.remove('flash'), 500);
+        const textoParaFalar = `Senha ${prefixo}, ${senhaMaisRecente.numero}. Dirija-se ao guichê ${parseInt(guicheFormatado, 10)}.`;
+        falarChamada(textoParaFalar);
 
-                // Grava o novo horário para não repetir o som no próximo segundo
-                ultimaHoraChamada = senhaMaisRecente.dataHoraChamada;
-            }
+        chamadaPrincipalEl.classList.add("flash");
+        setTimeout(() => chamadaPrincipalEl.classList.remove("flash"), 500);
 
-            // Atualiza o histórico lateral
-            historicoListaEl.innerHTML = '';
-            ultimasChamadas.slice(1, 5).forEach(senha => {
-                const p = senha.tipoSenha === 'PREFERENCIAL' ? 'P' : 'N';
-                const n = p + senha.numero;
-                const g = String(senha.guicheAtendimento).padStart(2, '0');
-                const listItem = document.createElement('li');
-                listItem.innerHTML = `<span>SENHA <strong>${n}</strong></span><span>GUICHÊ <strong>${g}</strong></span>`;
-                historicoListaEl.appendChild(listItem);
-            });
+        // Grava o novo horário para não repetir o som no próximo segundo
+        ultimaHoraChamada = senhaMaisRecente.dataHoraChamada;
+      }
 
-        } catch (error) {
-            console.error("Erro na atualização do painel:", error);
-        }
+      // Atualiza o histórico lateral
+      historicoListaEl.innerHTML = "";
+      ultimasChamadas.slice(1, 5).forEach((senha) => {
+        const p = senha.tipoSenha === "PREFERENCIAL" ? "P" : "N";
+        const n = p + senha.numero;
+        const g = String(senha.guicheAtendimento).padStart(2, "0");
+        const listItem = document.createElement("li");
+        listItem.innerHTML = `<span>SENHA <strong>${n}</strong></span><span>GUICHÊ <strong>${g}</strong></span>`;
+        historicoListaEl.appendChild(listItem);
+      });
+    } catch (error) {
+      console.error("Erro na atualização do painel:", error);
     }
+  }
 
   // Função para atualizar o relógio
   function atualizarRelogio() {

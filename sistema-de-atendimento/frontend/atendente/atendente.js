@@ -203,6 +203,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  atualizarHistorico();
+
+  // Isso manterá o histórico e o display grande sincronizados com os outros guichês
+  setInterval(atualizarHistorico, 5000);
+
   document.getElementById("btn-sair").addEventListener("click", () => {
     localStorage.removeItem("authToken"); // Apaga o token
     window.location.href = "../login/login.html"; // Volta pro login
